@@ -6,15 +6,6 @@ Each test result is stored as its own document, giving you full flexibility to b
 
 ---
 
-## Requirements
-
-- Python 3.10+
-- pytest 7+
-- Elasticsearch server 7.x or 8.x
-- `elasticsearch-py` client matching your server's major version
-
----
-
 ## Installation
 
 ### Via pip (once published)
@@ -47,38 +38,15 @@ Options can be set as CLI flags or in `pytest.ini` / `pyproject.toml`. CLI flags
 
 Authentication priority: **API Key > Basic Auth > none**
 
-### pytest.ini example
-
-```ini
-[pytest]
-es_url      = https://my-cluster:9200
-es_index    = pytest-results
-es_api_key  = id:key
-api_project = project-name
-```
-
-### pyproject.toml example
-
-```toml
-[tool.pytest.ini_options]
-es_url      = "https://my-cluster:9200"
-es_index    = "pytest-results"
-es_api_key  = "id:key"
-api_project = "project-name"
-```
-
 ---
 
 ## Usage
 
 ```bash
-# All config in pytest.ini — just run pytest normally
-pytest
-
 # Or pass everything via CLI
-pytest --es-url http://localhost:9200 \
+pytest --es-url http://elastic-cluster:9200 \
        --es-index pytest-results \
-       --api-project my-service \
+       --api-project my-app-tests \
        --es-username elastic \
        --es-password changeme
 ```
