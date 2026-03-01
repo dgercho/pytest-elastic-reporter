@@ -8,8 +8,6 @@ Each test result is stored as its own document, giving you full flexibility to b
 
 ## Installation
 
-### Via pip (once published)
-
 ```bash
 uv pip install pytest-elastic-reporter
 ```
