@@ -1,4 +1,4 @@
-name: Test pytest-es-reporter
+name: Test pytest-elastic-reporter
 
 on:
   push:
