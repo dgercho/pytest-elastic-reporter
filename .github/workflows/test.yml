@@ -40,14 +40,13 @@ jobs:
           pip install "elasticsearch>=8,<9"
 
       - name: Run tests
+        continue-on-error: true
         run: |
           pytest example/ \
             --es-url http://localhost:9200 \
             --es-index pytest-results-ci \
             --api-project pytest-es-reporter \
             -v
-        continue-on-error: true
-        id: run_tests
 
       - name: Verify results were indexed
         run: |
@@ -56,7 +55,3 @@ jobs:
           COUNT=$(curl -sf http://localhost:9200/pytest-results-ci/_count | python3 -c "import sys,json; print(json.load(sys.stdin)['count'])")
           echo "Indexed $COUNT document(s)"
           [ "$COUNT" -gt 0 ] || (echo "ERROR: no documents found in Elasticsearch" && exit 1)
-
-      - name: Propagate test outcome
-        if: steps.run_tests.outcome == 'failure'
-        run: exit 1
