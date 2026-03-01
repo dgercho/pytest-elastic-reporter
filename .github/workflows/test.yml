@@ -1,0 +1,62 @@
+name: Test pytest-es-reporter
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd "curl -sf http://localhost:9200/_cluster/health"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install -e .
+          pip install "elasticsearch>=8,<9"
+
+      - name: Run tests
+        run: |
+          pytest example/ \
+            --es-url http://localhost:9200 \
+            --es-index pytest-results-ci \
+            --api-project pytest-es-reporter \
+            -v
+        continue-on-error: true
+        id: run_tests
+
+      - name: Verify results were indexed
+        run: |
+          sleep 3
+          curl -sf http://localhost:9200/pytest-results-ci/_refresh
+          COUNT=$(curl -sf http://localhost:9200/pytest-results-ci/_count | python3 -c "import sys,json; print(json.load(sys.stdin)['count'])")
+          echo "Indexed $COUNT document(s)"
+          [ "$COUNT" -gt 0 ] || (echo "ERROR: no documents found in Elasticsearch" && exit 1)
+
+      - name: Propagate test outcome
+        if: steps.run_tests.outcome == 'failure'
+        run: exit 1
