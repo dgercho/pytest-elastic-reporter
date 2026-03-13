@@ -1,9 +1,14 @@
-import traceback
 import uuid
+import traceback
 from datetime import datetime, timezone
 
 import pytest
-from elasticsearch import Elasticsearch, helpers, AuthenticationException, ConnectionError
+from elasticsearch import (
+    Elasticsearch,
+    helpers,
+    AuthenticationException,
+    ConnectionError
+)
 
 
 def pytest_addoption(parser):
@@ -91,9 +96,11 @@ class ElasticsearchReporterPlugin:
         run_meta = {
             "run_id": self.run_id,
             "project": self.project,
-            "run_started_at": self._session_start.isoformat() if self._session_start else None,
+            "run_started_at": self._session_start.isoformat() if
+            self._session_start else None,
             "run_finished_at": finished_at.isoformat(),
-            "run_duration_s": round(duration_s, 3) if duration_s is not None else None,
+            "run_duration_s": round(duration_s, 3) if
+            duration_s is not None else None,
             "run_exit_code": exitstatus,
         }
         for r in self._results:
@@ -106,7 +113,8 @@ class ElasticsearchReporterPlugin:
 
     def pytest_runtest_logreport(self, report: pytest.TestReport):
         if report.when == "call" or (
-            report.when in ("setup", "teardown") and (report.failed or report.skipped)
+            report.when in ("setup", "teardown") and
+            (report.failed or report.skipped)
         ):
             self._results.append(self._build_document(report))
 
@@ -158,9 +166,7 @@ class ElasticsearchReporterPlugin:
         }
 
     def _bulk_index(self, docs: list[dict]):
-        """Index all documents in a single bulk request."""
         actions = ({"_index": self.index, "_source": doc} for doc in docs)
-
         try:
             success, errors = helpers.bulk(
                 self._es,
@@ -170,18 +176,20 @@ class ElasticsearchReporterPlugin:
             )
 
             if errors:
-                print(f"\n[REPORTER] [X] {len(errors)} document(s) failed to index:")
+                print(f"\n[REPORTER] [X] {len(errors)}"
+                      "document(s) failed to index:")
                 for err in errors[:3]:  # show first 3 errors
                     print(err)
             else:
                 print(
                     f"\n[REPORTER] [V] Indexed {success} result(s) "
-                    f"-> {self.es_url}/{self.index}  [run: {self.run_id[:8]}]"
+                    f"-> {self.es_url}/{self.index}  [{self.run_id[:8]}]"
                 )
 
         except AuthenticationException:
-            print("\n[REPORTER] [X] Authentication failed — check es_username / es_password or es_api_key")
+            print("\n[REPORTER] [X] Authentication failed.")
         except ConnectionError:
             print(f"\n[REPORTER] [X] Could not connect to {self.es_url}")
         except Exception:
-            print(f"\n[REPORTER] [X] Unexpected error:\n{traceback.format_exc()}")
+            print(f"\n[REPORTER] [X] Unexpected error:\n"
+                  f"{traceback.format_exc()}")
