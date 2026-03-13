@@ -4,9 +4,18 @@ A simple pytest plugin that reports test results to Elasticsearch.
 
 ![Demo](resources/demo.png)
 
+### Features
+
+- **Authentication**: Supports username/password and API key authentication methods
+- **Configuration**: Easily set Elasticsearch URL, index name, and project identifier
+- **Metadata Capture**: Records detailed test information including duration, outcome, and timestamps
+- **Error Handling**: Captures test failures with full error messages and tracebacks
+- **Fixture Failure Tracking**: Separately reports setup/teardown failures
+- **Skip Reason Support**: Handles skipped tests with detailed reasons for analysis
+
 ## Installation
 
-### Via pip (once published)
+### Via PyPI
 
 ```bash
 uv pip install pytest-elastic-reporter
