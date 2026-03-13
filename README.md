@@ -38,4 +38,4 @@ pytest --es-url http://elastic-cluster:9200 \
        --es-password changeme
 ```
 
-> Note: When a fixture raises an exception during `setup`, the test body never runs. These results will have `phase: "setup"`, `outcome: "failed"`, and `fixture_error: true` — making them easy to filter separately in Kibana.
+> Note: When a fixture raises an exception during `setup`, the test body never runs. These results will have `phase: "setup"`, `outcome: "failed"`, and `fixture_error: true`.
