@@ -6,17 +6,17 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pytest-elastic-reporter-plugin"
-version = "0.0.1"
+name = "pytest-elastic-reporter"
+version = "0.0.0"
 dependencies = [
     "pytest>=7.0",
     "elasticsearch>=7,<9",
 ]
 
 [project.entry-points.pytest11]
-es-reporter = "pytest_elastic_reporter"
+es-reporter = "pytest_elastic_reporter_plugin"
 
 [tool.setuptools]
 py-modules = [
-    "pytest_elastic_reporter",
+    "pytest_elastic_reporter_plugin",
 ]
