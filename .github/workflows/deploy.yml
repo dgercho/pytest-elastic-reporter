@@ -1,0 +1,73 @@
+name: Deploy pytest-elastic-reporter
+
+on:
+  workflow_run:
+    workflows: ["Test pytest-elastic-reporter"]
+    branches: ["main"]
+    types: [completed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build tools
+        run: pip install build tomli tomli-w
+
+      - name: Bump patch version
+        id: bump_version
+        run: |
+          python3 - <<'EOF'
+          import tomli, tomli_w, pathlib
+
+          path = pathlib.Path("pyproject.toml")
+          data = tomli.loads(path.read_text())
+
+          version = data["project"]["version"]
+          major, minor, patch = map(int, version.split("."))
+          new_version = f"{major}.{minor}.{patch + 1}"
+          data["project"]["version"] = new_version
+
+          path.write_bytes(tomli_w.dumps(data).encode())
+          print(f"Bumped {version} → {new_version}")
+          EOF
+          echo "version=$(python3 -c "import tomli; print(tomli.loads(open('pyproject.toml').read())['project']['version'])")" >> $GITHUB_OUTPUT
+
+      - name: Commit and push version bump
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ steps.bump_version.outputs.version }} [skip ci]"
+          git push
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: Upload to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.bump_version.outputs.version }}
+          name: v${{ steps.bump_version.outputs.version }}
+          files: dist/*.whl
+          generate_release_notes: true
