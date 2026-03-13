@@ -18,18 +18,32 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check relevant file changes
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep -E '\.py$|\.toml$|^example/' || true)
+          echo "Found changes: $CHANGED"
+          if [ -n "$CHANGED" ]; then
+            echo "relevant=true" >> $GITHUB_OUTPUT
+          else
+            echo "relevant=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up Python
+        if: steps.changes.outputs.relevant == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
       - name: Install build tools
+        if: steps.changes.outputs.relevant == 'true'
         run: pip install build tomli tomli-w
 
       - name: Bump patch version
+        if: steps.changes.outputs.relevant == 'true'
         id: bump_version
         run: |
           python3 - <<'EOF'
@@ -49,6 +63,7 @@ jobs:
           echo "version=$(python3 -c "import tomli; print(tomli.loads(open('pyproject.toml').read())['project']['version'])")" >> $GITHUB_OUTPUT
 
       - name: Commit and push version bump
+        if: steps.changes.outputs.relevant == 'true'
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -57,14 +72,17 @@ jobs:
           git push
 
       - name: Build wheel
+        if: steps.changes.outputs.relevant == 'true'
         run: python -m build --wheel
 
       - name: Upload to PyPI
+        if: steps.changes.outputs.relevant == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
 
       - name: Create GitHub Release
+        if: steps.changes.outputs.relevant == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.bump_version.outputs.version }}
